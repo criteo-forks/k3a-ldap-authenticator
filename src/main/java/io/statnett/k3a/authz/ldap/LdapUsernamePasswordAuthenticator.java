@@ -60,7 +60,6 @@ implements UsernamePasswordAuthenticator {
     }
 
     private boolean authenticateByDn(final String userDn, final char[] password, final String originalUsername) {
-        // Split the userDn by semicolon and trim each DN
         String[] dns = userDn.split(";");
         for (String dn : dns) {
             String trimmedDn = dn.trim();
