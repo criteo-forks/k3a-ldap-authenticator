@@ -69,22 +69,22 @@ implements UsernamePasswordAuthenticator {
             }
             LOG.info("Logging in with DN: " + trimmedDn);
             final LdapContext context = LdapUtils.connect(ldapConnectionSpec, trimmedDn, password);
-            if (context != null) {
-                try {
-                    if (useUserContextForFetchingGroups && !StringUtils.isBlank(usernameToUniqueSearchFormat)
-                            && originalUsername != null) {
-                        populateGroups(context, originalUsername);
-                    }
-                    return true;
-                } finally {
-                    try {
-                        context.close();
-                    } catch (final NamingException e) {
-                        LOG.warn("Ignoring exception when closing LDAP context.", e);
-                    }
-                }
+            if (context == null) {
+                LOG.debug("Authentication failed for DN: " + trimmedDn + ", trying next DN if available");
+                continue;
             }
-            LOG.debug("Authentication failed for DN: " + trimmedDn + ", trying next DN if available");
+
+            if (useUserContextForFetchingGroups && !StringUtils.isBlank(usernameToUniqueSearchFormat)
+                    && originalUsername != null) {
+                populateGroups(context, originalUsername);
+            }
+
+            try {
+                context.close();
+            } catch (final NamingException e) {
+                LOG.warn("Ignoring exception when closing LDAP context.", e);
+            }
+            return true;
         }
         return false;
     }
