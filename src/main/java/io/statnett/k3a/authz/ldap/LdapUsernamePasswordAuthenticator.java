@@ -47,7 +47,11 @@ implements UsernamePasswordAuthenticator {
         if (StringUtils.isBlank(username)) {
             return false;
         }
-        final String userDn = String.format(usernameToDnFormat, LdapUtils.escape(username));
+        final String escapedUsername = LdapUtils.escape(username);
+        final String userDn = String.format(usernameToDnFormat, 
+            java.util.stream.Stream.generate(() -> escapedUsername)
+                .limit(usernameToDnFormat.split("%s", -1).length - 1)
+                .toArray());
         return authenticateByDn(userDn, password, username);
     }
 
@@ -56,19 +60,33 @@ implements UsernamePasswordAuthenticator {
     }
 
     private boolean authenticateByDn(final String userDn, final char[] password, final String originalUsername) {
-        final LdapContext context = LdapUtils.connect(ldapConnectionSpec, userDn, password);
-        if (context == null) {
-            return false;
+        // Split the userDn by semicolon and trim each DN
+        String[] dns = userDn.split(";");
+        for (String dn : dns) {
+            String trimmedDn = dn.trim();
+            if (StringUtils.isBlank(trimmedDn)) {
+                continue;
+            }
+            LOG.info("Logging in with DN: " + trimmedDn);
+            final LdapContext context = LdapUtils.connect(ldapConnectionSpec, trimmedDn, password);
+            if (context != null) {
+                try {
+                    if (useUserContextForFetchingGroups && !StringUtils.isBlank(usernameToUniqueSearchFormat)
+                            && originalUsername != null) {
+                        populateGroups(context, originalUsername);
+                    }
+                    return true;
+                } finally {
+                    try {
+                        context.close();
+                    } catch (final NamingException e) {
+                        LOG.warn("Ignoring exception when closing LDAP context.", e);
+                    }
+                }
+            }
+            LOG.debug("Authentication failed for DN: " + trimmedDn + ", trying next DN if available");
         }
-        if (useUserContextForFetchingGroups && !StringUtils.isBlank(usernameToUniqueSearchFormat) && originalUsername != null) {
-            populateGroups(context, originalUsername);
-        }
-        try {
-            context.close();
-        } catch (final NamingException e) {
-            LOG.warn("Ignoring exception when closing LDAP context.", e);
-        }
-        return true;
+        return false;
     }
 
     private void populateGroups(final LdapContext context, final String username) {

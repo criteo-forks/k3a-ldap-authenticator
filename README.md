@@ -35,7 +35,7 @@ first class. For group membership you need both, since the
   cache key, but pass it through a hashing function first.
 
 ## Configuration
-  
+
 Configuration is done using Kafka properties: Either
 `dot.separated.properties`, or `KAFKA_ENVIRONMENT_VARIABLES`. To use
 environment variables, capitalize every letter of the original
@@ -89,7 +89,8 @@ directory expects as part of a bind operation. The `%s` combination
 will be replaced by a properly escaped version of what the user
 provided. On Active Directory this string should often be specified as
 just `%s`, since the directory authenticates using just the username
-without matching a full DN.
+without matching a full DN. If multiple DNs are used, they should be
+separated by semicolons.
 
 ### Group authorizer configuration
 

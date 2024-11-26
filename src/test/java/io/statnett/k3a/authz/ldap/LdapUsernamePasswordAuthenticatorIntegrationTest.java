@@ -24,8 +24,8 @@ public final class LdapUsernamePasswordAuthenticatorIntegrationTest {
     }
 
     @Test
-    public void shouldAcceptValidUsernameAndPassword() {
-        final LdapUsernamePasswordAuthenticator authenticator = getAuthenticator();
+    public void shouldAcceptValidUsernameAndPasswordWithMultipleDn() {
+        final LdapUsernamePasswordAuthenticator authenticator = getAuthenticatorWithMultipleDn();
         assertTrue(authenticator.authenticate(EmbeddedLdapUtils.EXISTING_USERNAME, EmbeddedLdapUtils.EXISTING_USER_PASSWORD));
     }
 
@@ -59,6 +59,10 @@ public final class LdapUsernamePasswordAuthenticatorIntegrationTest {
 
     private LdapUsernamePasswordAuthenticator getAuthenticator() {
         return new LdapUsernamePasswordAuthenticator(EmbeddedLdapUtils.getLdapConnectionSpec(LDAP_RULE), EmbeddedLdapUtils.USERNAME_TO_DN_FORMAT, EmbeddedLdapUtils.USERNAME_TO_UNIQUE_SEARCH_FORMAT, null, null);
+    }
+
+    private LdapUsernamePasswordAuthenticator getAuthenticatorWithMultipleDn() {
+        return new LdapUsernamePasswordAuthenticator(EmbeddedLdapUtils.getLdapConnectionSpec(LDAP_RULE), "cn=%s,dn=dont,dn=work;" + EmbeddedLdapUtils.USERNAME_TO_DN_FORMAT, EmbeddedLdapUtils.USERNAME_TO_UNIQUE_SEARCH_FORMAT, null, null);
     }
 
     private LdapUsernamePasswordAuthenticator getAuthenticatorWithServiceUser() {
